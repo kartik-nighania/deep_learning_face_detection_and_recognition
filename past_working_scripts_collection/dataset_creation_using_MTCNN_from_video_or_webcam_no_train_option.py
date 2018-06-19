@@ -163,7 +163,8 @@ def main():
     while loop_type or (total_frames > 0):
          
          # If video selected dec counter
-         if loop_type == False: total_frames -= 1
+         if loop_type == False:
+           total_frames -= 1
 
          ret, image = device.read()
 

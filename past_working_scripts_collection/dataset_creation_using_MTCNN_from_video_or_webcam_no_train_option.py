@@ -56,10 +56,10 @@ def main():
 
        path = 'output'
        if os.path.isdir(path):
-       	 print("Directory already exists. Using it \n")
+         print("Directory already exists. Using it \n")
        else:
           if os.makedirs(path):
-       	    print("error in making directory. \n")
+            print("error in making directory. \n")
             sys.exit()
           else:
              print("Directory successfully made: " + path + "\n")
@@ -77,7 +77,7 @@ def main():
     if gpu_fraction == "":
       gpu_fraction = 0.8
     else:
-    	gpu_fraction = round(float(gpu_fraction), 1)
+      gpu_fraction = round(float(gpu_fraction), 1)
 
     # Some more MTCNN parameter
     minsize = 20 # minimum size of face
@@ -105,8 +105,8 @@ def main():
      train()
 
   else:
-  	print("No correct keyword entered. Exiting")
-  	sys.exit()
+    print("No correct keyword entered. Exiting")
+    sys.exit()
 
  # Create dataset was choosen before and so working with taking dataset.
   while True:
@@ -116,21 +116,21 @@ def main():
     ask = ask.replace(" ", "_")    
 
     if ask=="":
-   	 folder_name = 'person' + str(personNo)
+     folder_name = 'person' + str(personNo)
     else:
-   	  folder_name = ask
+      folder_name = ask
 
-    # Creating new user specific variables   	
+    # Creating new user specific variables    
     personNo += 1
     users_folder = path + "/" + folder_name
     image_no = 1
 
     # Create folder with the given location and the given username.
     if os.path.isdir(users_folder):
-       	 print("Directory already exists. Using it \n")
+         print("Directory already exists. Using it \n")
     else:
       if os.makedirs(users_folder):
-       	print("error in making directory. \n")
+        print("error in making directory. \n")
         sys.exit()
       else:
         print("Directory successfully made: " + users_folder + "\n")
@@ -156,10 +156,14 @@ def main():
     else:
        # Finding total number of frames of video.
        total_frames = int(device.get(cv2.CAP_PROP_FRAME_COUNT))
+       # Shutting down webcam variable
+       loop_type = False
       
     # Start web cam or start video and start creating dataset by user.
     while loop_type or (total_frames > 0):
-         total_frames -= 1
+         
+         # If video selected dec counter
+         if loop_type == False: total_frames -= 1
 
          ret, image = device.read()
 
@@ -204,13 +208,14 @@ def main():
     # Ask for more user using webcam or video else exit.
     ask = input("Press ENTER if you want to add more users or press the keyword 'q' to stop dataset creation: ")
     ask = ask.rstrip().lstrip().lower()
-    if ask[0] == 'q':
-      break
+    if ask != "":
+      if ask[0] == 'q':
+        break
 
   # This means dataset creating is complete. ASK the user for train now or exit.
   ask = input("Press ENTER to exit or press T keyword to train the data by Facenet model on dataset: ").rstrip().lower()
   if ask == "t":
-  	train()
+    train()
 
 
 def train():
@@ -232,7 +237,7 @@ def train():
       gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=gpu_fraction)
       sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False))
       with tf.Session() as sess:
-    	   facenet.load_model(model)
+         facenet.load_model(model)
 
 
 

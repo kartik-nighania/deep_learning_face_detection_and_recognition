@@ -75,8 +75,6 @@ def main(args):
     video_format = int(vs.get(cv2.CAP_PROP_FOURCC))
     frame_size = (int(vs.get(cv2.CAP_PROP_FRAME_WIDTH)), int(vs.get(cv2.CAP_PROP_FRAME_HEIGHT)))
     total_frames = int(vs.get(cv2.CAP_PROP_FRAME_COUNT))
-
-    # Creating video writer to save the video after process if needed
     output_video = cv2.VideoWriter("Output_" + args.video, video_format, fps, frame_size)
 
     # Create the output_faces directory by user or default arguments

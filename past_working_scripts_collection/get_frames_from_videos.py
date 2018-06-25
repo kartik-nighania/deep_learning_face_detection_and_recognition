@@ -21,6 +21,7 @@ def main():
         os.makedirs(folder_name)
 
      frameNo= 0
+     prevNo = -1
      image_no = 1
      image_path = ""
      total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -36,10 +37,14 @@ def main():
          # show frame on window
          cv2.imshow(path, frame)
 
-         print("\nFrame number is: "+ str(frameNo))
+         # See for a change in frame number to print
+         if frameNo != prevNo:
+            print("\nFrame number is: "+ str(frameNo))
 
          key = (cv2.waitKey(1000) & 0xFF)
          
+         prevNo = frameNo
+
          if key == ord("d"):
             frameNo += 1
          if key == ord("a"):

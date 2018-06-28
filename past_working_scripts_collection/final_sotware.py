@@ -34,7 +34,7 @@ def main():
   print("              Welcome to the Face detection and recognition program. \n")
   print("\n*********************************************************************************************** \n")
   print("GUIDELINES TO USE THIS SOFTWARE: \n\nThis code gives the user to:\n\n1) CREATE DATASET using MTCNN face detection and alignment. or\n2) TRAIN FaceNet for face recognition. or \n3) Do both.\n\n The user will multiple times get option to choose webcam (default option) or video file to do face detection and will be asked for output folder, username on folder and image files etc also (default options exists for that too)\n\n **************   IMPORTANT   *************\n1) Whenever webcam or video starts press 's' keyword to start face detection in video or webcam frames and save the faces in the folder for a single user. This dataset creation will stop the moment you release the 's' key. This can be done multiple times.\n\n2) Press 'q' to close it when you are done with one person, and want to detect face for another person. \n\n3) Make sure you press the keywords on the image window and not the terminal window.\n")
-  mode = input("Press W to TRAIN and 'maybe' TEST later by making a classifer on the facenet model OR \nPress T to TEST by loading already created facenet classification model on a user given dataset \nPress D to first create dataset and then 'maybe' train later\nPress H to load a classifier model and display result on webcam OR user given video OR given image: ").rstrip().lower()
+  mode = input("Press W to TRAIN and 'maybe' TEST later by making a classifer on the facenet model OR \nPress T to TEST by loading already created facenet classification model on a user given dataset \nPress D to first create dataset and then 'maybe' train later\nPress H to load a classifier model and display result on webcam OR user given video OR given set of images: ").rstrip().lower()
 
   # This means user went for Creating of dataset
   if mode == 'd':
@@ -228,6 +228,8 @@ def dataset_creation():
       if ask[0] == 'q':
         break
 
+   # DATA AUGMENTATION - increase the dataset size by introducing blur, change in lighting.
+   ask = input("Press n if you want to increase the dataset by augmentation.")
    # This means dataset creating is complete. ASK the user for train now or exit.
    ask = input("Press ENTER to exit or \nPress T keyword to TRAIN and 'maybe' TEST later by creating a classifier on the facenet model OR \nPress W to test the dataset folder on a classifier model: ").rstrip().lstrip().lower()
    if ask == 't':
@@ -242,6 +244,9 @@ def dataset_creation():
      else:
        print("\n wrong keyword pressed. Cleaning and exiting. \n Thank You \n")
 
+
+# With parameters for dataset_creation function
+# Without parameters to ask from the user for creating the dataset outside the given folder.
 
 def train():
 
@@ -541,7 +546,6 @@ def recognize():
    # Loading the classifier model
    with open(classifier_filename, 'rb') as infile:
        (modelSVM, class_names) = pickle.load(infile)
-   print('\nLoaded classifier model from file "%s"' % classifier_filename)
 
    # helper variables
    image = []
@@ -559,7 +563,11 @@ def recognize():
    output_video = []
 
    #image input type variables
-   save_image = False
+   save_images = False
+   image_folder = ""
+   out_img_folder = ""
+   imageNo = 1
+   image_list = []
    image_name = ""
 
    # If web cam is selected
@@ -573,12 +581,34 @@ def recognize():
 
    # If image selected, go to image function.
    elif input_type == "i":
-        data_type = input("\nWrite the image path file to open: ").rstrip().lstrip()
-        image = cv2.imread(data_type)
-        ask = input("\nPress y to save the output image OR simply press ENTER to ignore it: ").lstrip().rstrip().lower()
-        if ask == "y":
-           save_image = True
-        total_frames = 1
+        
+        # Create a list of images inside the given folder
+        image_folder = input("\nWrite the folder path inside which images are kept: ").rstrip().lstrip()
+        for img in os.listdir(image_folder):
+            image_list.append(img)
+        total_frames = len(image_list)
+
+        path = input("\nIf you want to save the output images to a folder press Y OR press ENTER to ignore it: ").lstrip().rstrip().lower()
+        
+        if path == "y":
+            save_images = True
+            path = input("\nEnter the location of output folder OR press ENTER to default create an output_images directory here only: ").lstrip().rstrip()
+            if os.path.isdir(path) or path == "": 
+                 # User given path is present.
+                 if path == "":
+                    path = "output_images"
+                 else:
+                    path += '/output_images'
+                 if os.path.isdir(path):
+                   print("Directory already exists. Using it \n")
+                 else:
+                   if not os.makedirs(path):
+                     print("Directory successfully made in: " + path + "\n")
+            else:
+                 print("Error image folder path. Exiting")
+                 sys.exit()
+            out_img_folder = path + "/"
+
 
    # Video is selected
    else:
@@ -586,7 +616,9 @@ def recognize():
         ask = input("\nPress y to save the output video OR simply press ENTER to ignore it: ").lstrip().rstrip().lower()
         if ask == "y":
            save_video = True
-        ask = input("\nSimply press ENTER to see the output video frames OR press N to switch off the output display: ").lstrip().rstrip().lower()
+
+   if input_type != "w":
+        ask = input("\nSimply press ENTER to see the output images OR press N to switch off the display: ").lstrip().rstrip().lower()
         if ask == "n":
            display_output = False
 
@@ -615,7 +647,9 @@ def recognize():
    # Start web cam or start video and start creating dataset by user.
    while loop_type or (frame_no <= total_frames):
 
-       if input_type != "i":
+       if input_type == "i":
+          image = cv2.imread(image_folder + "/" + image_list[frame_no-1])
+       else:
           ret, image = device.read()
 
        # Run MTCNN model to detect faces
@@ -635,6 +669,8 @@ def recognize():
 
          for col in range(points.shape[1]):
              aligned_image = affine.align(image, points[:,col])
+             print(aligned_image)
+             print("\n"+str(len(aligned_image)))
 
              # Prewhiten the image for facenet architecture to give better results
              mean = np.mean(aligned_image)
@@ -664,7 +700,7 @@ def recognize():
 
          # DRAW: draw bounding boxes, landmarks and predicted names
 
-         if save_video or display_output:
+         if save_video or display_output or save_images:
            for i in range(bb.shape[0]):
               cv2.rectangle(image, (int(bb[i][0]),int(bb[i][1])), (int(bb[i][2]),int(bb[i][3])), (255,0, 0), 1)
 
@@ -682,18 +718,13 @@ def recognize():
           cv2.imshow("Output", image)
        if save_video:
           output_video.write(image)
-       if save_image:
-          #Just taking the initial name of the input image and saving in jpg which opencv supports for sure
-          output_name = "output_" + data_type.split(".")[0] + ".jpg"
+       if save_images:
+          output_name = out_img_folder + image_list[frame_no-1]
+          #Just taking the initial name of the input image and save in jpg which opencv supports for sure
+          #output_name = out_img_folder + image_list[frame_no-1].split(".")[0] + ".jpg"
           cv2.imwrite(output_name, image)
-          
-       if input_type == "i":
-          #Loop showing output image until q pressed
-          while (cv2.waitKey(0) & 0xFF) != ord("q"):
-                print("Wrong Keyword. Press q to exit")
-          sys.exit()
 
-       # If video selected dec counter
+       # If video or images selected dec counter
        if loop_type == False:
           # Display the progress
           print("\nProgress: %.2f" %(100*frame_no/total_frames) + "%")
